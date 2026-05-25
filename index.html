@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  TrueVue Financial Portfolio — index.html
+  ============================================================
+  Author  : Your Name Here
+  Purpose : A single-page portfolio dashboard showcasing the
+            real financial performance of TrueVue, a virtual
+            company run during high school (Oct 2025–Apr 2026).
+  Stack   : Pure HTML, CSS, and JavaScript — no frameworks.
+             Chart.js is loaded from a CDN (Content Delivery
+             Network), meaning you link to a hosted library
+             instead of downloading it yourself.
+  Hosting : Upload this one file to a GitHub repository and
+             enable GitHub Pages under Settings → Pages.
+  ============================================================
+-->
+<html lang="en">
+
+<head>
+  <!-- ── META & TITLE ─────────────────────────────────────────
+    <meta charset> tells the browser how to decode characters.
+    UTF-8 supports every language and symbol — always use it.
+    <meta name="viewport"> makes the page look correct on phones.
+      "width=device-width" → use the screen's actual width.
+      "initial-scale=1"    → don't zoom in or out on load.
+  ──────────────────────────────────────────────────────────── -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrueVue · Financial Dashboard</title>
+
+  <!-- ── EXTERNAL FONT ────────────────────────────────────────
+    Google Fonts delivers the "Inter" typeface via CDN.
+    Inter is a clean, professional sans-serif designed
+    specifically for screen readability — perfect for dashboards.
+    The "display=swap" parameter ensures your fallback font
+    shows immediately while Inter downloads in the background.
+  ──────────────────────────────────────────────────────────── -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ── CHART.JS (CDN) ───────────────────────────────────────
+    Chart.js is a popular open-source charting library.
+    Loading it from a CDN means:
+      1. You don't need to download or install anything.
+      2. The user's browser may already have it cached from
+         visiting another site, making your page load faster.
+    The script tag here loads Chart.js BEFORE your own JS
+    runs, so the "Chart" class is ready to use by the time
+    the browser reaches your <script> block at the bottom.
+  ──────────────────────────────────────────────────────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       CSS ARCHITECTURE OVERVIEW
+       ══════════════════════════════════════════════════════════
+       This stylesheet is organized in five layers:
+         1. CSS Custom Properties  — a "design token" system
+         2. Reset & Base           — sensible defaults
+         3. Layout & Structure     — page skeleton
+         4. Components             — reusable UI pieces
+         5. Sections               — page-specific styles
+
+       CSS Custom Properties (variables) live on :root so every
+       element can inherit them. To restyle the whole site,
+       you only need to change values in ONE place.
+    ══════════════════════════════════════════════════════════ */
+
+    /* ── 1. DESIGN TOKENS ────────────────────────────────────
+      "--" prefix marks a CSS custom property (variable).
+      var(--token-name) reads the value wherever you need it.
+    ──────────────────────────────────────────────────────── */
+    :root {
+      /* Color palette */
+      --color-bg:          #0d0f14; /* Page background — deep navy-black      */
+      --color-surface:     #161a24; /* Card background — slightly lighter      */
+      --color-surface-alt: #1e2433; /* Hover / alternate surface              */
+      --color-border:      #2a3045; /* Subtle dividing lines                  */
+      --color-accent:      #4f7ef8; /* Primary brand accent — vivid blue      */
+      --color-accent-dim:  #1e2e55; /* Muted accent for backgrounds           */
+      --color-success:     #34c87a; /* Positive values — green                */
+      --color-danger:      #f05252; /* Negative values — red                  */
+      --color-warning:     #f0a832; /* Neutral callout — amber                */
+
+      /* Typography */
+      --text-primary:   #e8ecf4; /* Main body text — off-white for contrast  */
+      --text-secondary: #7a8499; /* Muted labels and captions                */
+      --text-tertiary:  #4a5168; /* Very muted — footnotes, disabled states  */
+
+      /* Spacing scale — a consistent rhythm makes layouts feel polished.
+         Using multiples of 4px is a common design system convention.     */
+      --space-xs:  4px;
+      --space-sm:  8px;
+      --space-md:  16px;
+      --space-lg:  24px;
+      --space-xl:  40px;
+      --space-2xl: 64px;
+
+      /* Typography scale */
+      --text-xs:  0.75rem;   /* 12px */
+      --text-sm:  0.875rem;  /* 14px */
+      --text-base: 1rem;     /* 16px */
+      --text-lg:  1.125rem;  /* 18px */
+      --text-xl:  1.375rem;  /* 22px */
+      --text-2xl: 1.75rem;   /* 28px */
+      --text-3xl: 2.25rem;   /* 36px */
+
+      /* Shape */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    /* ── 2. RESET & BASE ────────────────────────────────────
+      "Box-sizing: border-box" is one of the most important
+      CSS tricks. By default, padding ADDS to an element's
+      width. With border-box, padding is INCLUDED in the
+      declared width — much more predictable.
+
+      The * selector applies a rule to EVERY element.
+    ──────────────────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      /* scroll-behavior: smooth makes anchor links (#section)
+         glide instead of jump — a small UX touch.          */
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif; /* Use our CDN font; system sans is fallback */
+      background-color: var(--color-bg);
+      color: var(--text-primary);
+      line-height: 1.6;                 /* ~160% line-height improves readability    */
+      -webkit-font-smoothing: antialiased; /* Renders fonts crisper on macOS/iOS      */
+    }
+
+    /* Remove underline from links but preserve color context */
+    a { color: var(--color-accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── 3. LAYOUT & STRUCTURE ──────────────────────────────
+      .container is a classic "max-width centered" wrapper.
+      max-width caps it at 1100px on large screens.
+      margin: 0 auto centers it horizontally.
+      padding: 0 var(--space-lg) gives breathing room on
+      mobile where the screen is narrower than max-width.
+    ──────────────────────────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+    }
+
+    /* ── 4. REUSABLE COMPONENTS ─────────────────────────────
+
+       — SECTION WRAPPER ——————————————————————————————————— */
+    .section {
+      padding: var(--space-2xl) 0;
+    }
+
+    /* Alternate sections get a slightly different background
+       to create visual separation without hard borders.     */
+    .section--alt {
+      background-color: var(--color-surface);
+    }
+
+    /* — SECTION HEADER ——————————————————————————————————— */
+    .section-header {
+      margin-bottom: var(--space-xl);
+    }
+
+    .section-header__eyebrow {
+      /* "Eyebrow" = the small label above a heading.
+         letter-spacing adds visual weight to short caps text. */
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      margin-bottom: var(--space-sm);
+    }
+
+    .section-header__title {
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .section-header__subtitle {
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      max-width: 540px;         /* Limits line length for readability         */
+      line-height: 1.7;
+    }
+
+    /* — CARD ————————————————————————————————————————————— */
+    .card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    /* — GRID LAYOUTS ———————————————————————————————————— */
+    /* CSS Grid with auto-fit + minmax = responsive columns.
+       The browser calculates how many columns fit at 220px
+       minimum each. On mobile it collapses to 1 column.    */
+    .grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .grid-charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    /* ── 5. SECTION-SPECIFIC STYLES ──────────────────────── */
+
+    /* — HERO / NAV —————————————————————————————————————— */
+    .nav {
+      position: sticky;       /* Sticks to the top as you scroll              */
+      top: 0;
+      z-index: 100;           /* Higher z-index means it sits on top of other elements */
+      background-color: rgba(13, 15, 20, 0.85); /* Semi-transparent background */
+      backdrop-filter: blur(12px); /* Frosted-glass effect — blurs content beneath */
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .nav__logo {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* A small colored dot as a logo accent */
+    .nav__logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--color-accent);
+    }
+
+    .nav__links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;  /* Removes the default bullet points from <ul> */
+    }
+
+    .nav__links a {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      transition: color 0.2s; /* Smooth color shift on hover */
+    }
+
+    .nav__links a:hover {
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    /* — HERO SECTION ———————————————————————————————————— */
+    .hero {
+      padding: var(--space-2xl) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .hero__tag {
+      display: inline-block;
+      background-color: var(--color-accent-dim);
+      color: var(--color-accent);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: var(--space-xs) var(--space-md);
+      border-radius: 999px;  /* A very large radius creates a "pill" shape */
+      margin-bottom: var(--space-lg);
+    }
+
+    .hero__title {
+      font-size: clamp(2rem, 5vw, 3rem); /* clamp(min, preferred, max)
+         clamp() lets the font scale fluidly between screen sizes
+         without needing media queries for typography.             */
+      font-weight: 600;
+      line-height: 1.15;
+      margin-bottom: var(--space-md);
+    }
+
+    /* A gradient applied to text — a modern highlight technique */
+    .hero__title-accent {
+      background: linear-gradient(90deg, var(--color-accent), #8ab4ff);
+      -webkit-background-clip: text;   /* Clip the gradient to the text shape */
+      background-clip: text;
+      -webkit-text-fill-color: transparent; /* Makes the text itself transparent so gradient shows */
+    }
+
+    .hero__subtitle {
+      font-size: var(--text-lg);
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin-bottom: var(--space-xl);
+      line-height: 1.7;
+    }
+
+    /* Flex row of metadata badges */
+    .hero__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--radius-md);
+    }
+
+    .badge__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-success);
+    }
+
+    /* — METRIC CARDS ———————————————————————————————————— */
+    .metric-card {
+      /* Extends .card — same visual style, specific layout */
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      /* transition makes border color animate on hover */
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .metric-card:hover {
+      border-color: var(--color-accent);
+      transform: translateY(-2px); /* Lifts the card slightly — "float" effect */
+    }
+
+    .metric-card__label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .metric-card__value {
+      font-size: var(--text-3xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-xs);
+      /* font-variant-numeric: tabular-nums aligns numbers on
+         their decimal points — important for financial data.  */
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-card__value--negative {
+      color: var(--color-danger);
+    }
+
+    .metric-card__value--positive {
+      color: var(--color-success);
+    }
+
+    .metric-card__context {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+    }
+
+    /* Accent bar at the top of each card */
+    .metric-card__bar {
+      height: 3px;
+      border-radius: 999px;
+      margin-bottom: var(--space-lg);
+    }
+
+    /* — CHART CARDS ————————————————————————————————————— */
+    .chart-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    .chart-card__header {
+      margin-bottom: var(--space-lg);
+    }
+
+    .chart-card__title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-xs);
+    }
+
+    .chart-card__subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    /* Wrap the canvas so Chart.js can size itself correctly.
+       Chart.js requires a RELATIVE parent to measure against.
+       The height here controls how tall the chart appears.    */
+    .chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 280px;
+    }
+
+    /* For the doughnut chart, a taller wrap looks better */
+    .chart-canvas-wrap--donut {
+      height: 300px;
+    }
+
+    /* — LEGEND ————————————————————————————————————————— */
+    /* We build our own legend instead of using Chart.js's
+       default so we have full control over its appearance.  */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      margin-top: var(--space-md);
+    }
+
+    .chart-legend__item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .chart-legend__swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0; /* Prevents the swatch from shrinking if text is long */
+    }
+
+    /* — EXPENSE TABLE ———————————————————————————————————— */
+    .expense-table {
+      width: 100%;
+      border-collapse: collapse; /* Removes double borders between cells */
+    }
+
+    .expense-table th,
+    .expense-table td {
+      text-align: left;
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--text-sm);
+    }
+
+    .expense-table th {
+      color: var(--text-tertiary);
+      font-weight: 500;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: var(--space-sm);
+    }
+
+    /* nth-child selects specific rows — (even) or (odd).
+       This creates the "zebra stripe" table pattern.        */
+    .expense-table tbody tr:nth-child(even) {
+      background-color: var(--color-surface-alt);
+    }
+
+    .expense-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* — PROGRESS BAR ————————————————————————————————————— */
+    .progress-bar-wrap {
+      background-color: var(--color-surface-alt);
+      border-radius: 999px;
+      height: 4px;
+      overflow: hidden; /* Clips the inner fill to the rounded corners */
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      /* transition animates the bar width — see JS for how
+         this is triggered after the page loads.             */
+      transition: width 0.8s ease-out;
+    }
+
+    /* — ABOUT SECTION ———————————————————————————————————— */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xl);
+      align-items: start;
+    }
+
+    .about-text p {
+      color: var(--text-secondary);
+      font-size: var(--text-base);
+      line-height: 1.8;
+      margin-bottom: var(--space-md);
+    }
+
+    .about-text p:last-child { margin-bottom: 0; }
+
+    /* A styled blockquote for emphasis */
+    .callout {
+      border-left: 3px solid var(--color-accent);
+      padding: var(--space-md) var(--space-lg);
+      background-color: var(--color-accent-dim);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-top: var(--space-lg);
+    }
+
+    .about-stats {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .stat-item {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-item__label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .stat-item__value {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* — FOOTER ———————————————————————————————————————————— */
+    .footer {
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-xl) 0;
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: var(--text-sm);
+    }
+
+    /* ── RESPONSIVE BREAKPOINTS ───────────────────────────
+      @media queries apply rules only at certain screen widths.
+      "max-width: 680px" targets phones and small tablets.
+      We reduce font sizes and collapse multi-column layouts.
+    ──────────────────────────────────────────────────────── */
+    @media (max-width: 680px) {
+      .hero__title { font-size: 1.8rem; }
+      .nav__links   { display: none; } /* Hide nav links on mobile to avoid overflow */
+      .about-grid   { grid-template-columns: 1fr; } /* Stack columns vertically */
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════
+       NAVIGATION
+       position: sticky keeps this bar at the top as you scroll.
+  ══════════════════════════════════════════════════════════ -->
+  <nav class="nav" aria-label="Main navigation">
+    <div class="nav__inner">
+      <div class="nav__logo">
+        <div class="nav__logo-dot"></div>
+        TrueVue
+      </div>
+      <!-- <ul> is a semantic list — better for screen readers and SEO
+           than a bunch of <div>s.                                   -->
+      <ul class="nav__links">
+        <li><a href="#metrics">Metrics</a></li>
+        <li><a href="#charts">Charts</a></li>
+        <li><a href="#expenses">Expenses</a></li>
+        <li><a href="#about">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════
+       HERO SECTION
+       The first thing a visitor sees — sets the tone.
+  ══════════════════════════════════════════════════════════ -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="container">
+
+      <div class="hero__tag">FY 2025–2026 · Virtual Enterprise</div>
+
+      <!-- id="hero-heading" is referenced by aria-labelledby above.
+           This connects the section to its heading for accessibility. -->
+      <h1 class="hero__title" id="hero-heading">
+        TrueVue Financial<br>
+        <span class="hero__title-accent">Performance Dashboard</span>
+      </h1>
+
+      <p class="hero__subtitle">
+        A real financial record of TrueVue, a virtual company I built and
+        managed during high school. Seven months of actual sales data,
+        operating costs, and profit analysis — visualized with code.
+      </p>
+
+      <div class="hero__meta">
+        <div class="badge">
+          <div class="badge__dot"></div>
+          Oct 2025 – Apr 2026
+        </div>
+        <div class="badge">
+          <div class="badge__dot" style="background: var(--color-accent);"></div>
+          7-Month Fiscal Period
+        </div>
+        <div class="badge">
+          <div class="badge__dot" style="background: var(--color-warning);"></div>
+          Virtual Enterprise International
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       METRICS SECTION
+       High-level KPI (Key Performance Indicator) cards.
+  ══════════════════════════════════════════════════════════ -->
+  <section id="metrics" class="section" aria-labelledby="metrics-heading">
+    <div class="container">
+
+      <div class="section-header">
+        <p class="section-header__eyebrow">Financial Snapshot</p>
+        <h2 class="section-header__title" id="metrics-heading">Key Performance Metrics</h2>
+        <p class="section-header__subtitle">
+          Aggregated results across all seven months of operation,
+          spanning both actual (Oct–Mar) and projected (Apr) figures.
+        </p>
+      </div>
+
+      <!-- The JS below reads each card's data-* attributes to fill these in.
+           data-* are custom HTML attributes — a clean way to pass data
+           from HTML to JavaScript without cluttering your code logic.    -->
+      <div class="grid-metrics">
+
+        <div class="metric-card" data-value="$1,267,374" data-label="Total Revenue" data-context="All channels combined" data-color="#4f7ef8" data-positive="true">
+          <div class="metric-card__bar"></div>
+          <div class="metric-card__label"></div>
+          <div class="metric-card__value"></div>
+          <div class="metric-card__context"></div>
+        </div>
+
+        <div class="metric-card" data-value="$631,577" data-label="Gross Profit" data-context="49.8% gross margin" data-color="#34c87a" data-positive="true">
+          <div class="metric-card__bar"></div>
+          <div class="metric-card__label"></div>
+          <div class="metric-card__value"></div>
+          <div class="metric-card__context"></div>
+        </div>
+
+        <div class="metric-card" data-value="$863,418" data-label="Total Expenses" data-context="Operating expenditures" data-color="#f0a832" data-positive="false">
+          <div class="metric-card__bar"></div>
+          <div class="metric-card__label"></div>
+          <div class="metric-card__value"></div>
+          <div class="metric-card__context"></div>
+        </div>
+
+        <div class="metric-card" data-value="-$231,841" data-label="Net Profit / Loss" data-context="Narrowing toward break-even by April" data-color="#f05252" data-positive="false">
+          <div class="metric-card__bar"></div>
+          <div class="metric-card__label"></div>
+          <div class="metric-card__value"></div>
+          <div class="metric-card__context"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       CHARTS SECTION
+       Two charts side by side: monthly bar chart + revenue
+       mix doughnut chart.
+  ══════════════════════════════════════════════════════════ -->
+  <section id="charts" class="section section--alt" aria-labelledby="charts-heading">
+    <div class="container">
+
+      <div class="section-header">
+        <p class="section-header__eyebrow">Data Visualization</p>
+        <h2 class="section-header__title" id="charts-heading">Monthly Trends</h2>
+        <p class="section-header__subtitle">
+          Revenue climbed 18.6% from October to April, while net loss
+          shrank from -$49K to just -$7K — a strong positive trend.
+        </p>
+      </div>
+
+      <div class="grid-charts">
+
+        <!-- ── CHART 1: Monthly Revenue vs. Gross Profit ── -->
+        <div class="chart-card">
+          <div class="chart-card__header">
+            <h3 class="chart-card__title">Revenue vs. Gross Profit</h3>
+            <p class="chart-card__subtitle">Monthly figures, Oct 2025 – Apr 2026</p>
+          </div>
+
+          <!-- role="img" + aria-label make the canvas accessible
+               to screen readers (blind users). Always include these. -->
+          <div class="chart-canvas-wrap">
+            <canvas id="barChart"
+              role="img"
+              aria-label="Bar chart comparing monthly revenue and gross profit from October 2025 to April 2026. Revenue peaks in April at $210,180.">
+            </canvas>
+          </div>
+
+          <!-- Custom legend — matches the chart's dataset colors -->
+          <div class="chart-legend" id="barChartLegend"></div>
+        </div>
+
+        <!-- ── CHART 2: Revenue Mix (Doughnut) ────────────── -->
+        <div class="chart-card">
+          <div class="chart-card__header">
+            <h3 class="chart-card__title">Revenue Mix</h3>
+            <p class="chart-card__subtitle">Share by sales channel, full period</p>
+          </div>
+
+          <div class="chart-canvas-wrap chart-canvas-wrap--donut">
+            <canvas id="donutChart"
+              role="img"
+              aria-label="Doughnut chart of revenue by channel. B2B contract 75.2%, tradeshows 22.4%, online sales 2.4%.">
+            </canvas>
+          </div>
+
+          <div class="chart-legend" id="donutChartLegend"></div>
+        </div>
+
+        <!-- ── CHART 3: Net Profit/Loss Trend (full width) ── -->
+        <div class="chart-card" style="grid-column: 1 / -1;">
+          <!-- grid-column: 1 / -1 makes this card span ALL columns,
+               regardless of how many the grid has at that screen size. -->
+          <div class="chart-card__header">
+            <h3 class="chart-card__title">Monthly Net Profit / Loss</h3>
+            <p class="chart-card__subtitle">
+              A clear upward trend — the loss narrowed by ~$42K from Jan to Apr
+            </p>
+          </div>
+
+          <div class="chart-canvas-wrap">
+            <canvas id="lineChart"
+              role="img"
+              aria-label="Line chart showing monthly net profit or loss from October through April. All months show a loss, with April the smallest at negative $7,075.">
+            </canvas>
+          </div>
+
+          <div class="chart-legend" id="lineChartLegend"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       EXPENSES SECTION
+  ══════════════════════════════════════════════════════════ -->
+  <section id="expenses" class="section" aria-labelledby="expenses-heading">
+    <div class="container">
+
+      <div class="section-header">
+        <p class="section-header__eyebrow">Cost Structure</p>
+        <h2 class="section-header__title" id="expenses-heading">Operating Expense Breakdown</h2>
+        <p class="section-header__subtitle">
+          Payroll is the dominant cost driver at 77% of total OpEx —
+          a common structure for service-oriented businesses.
+        </p>
+      </div>
+
+      <div class="card">
+        <table class="expense-table" aria-label="Operating expense breakdown table">
+          <thead>
+            <tr>
+              <th>Expense Category</th>
+              <th>7-Month Total</th>
+              <th style="width: 35%;">Share of OpEx</th>
+            </tr>
+          </thead>
+          <!-- The JS below populates this <tbody> from the EXPENSES array -->
+          <tbody id="expenseTableBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       ABOUT SECTION
+  ══════════════════════════════════════════════════════════ -->
+  <section id="about" class="section section--alt" aria-labelledby="about-heading">
+    <div class="container">
+
+      <div class="section-header">
+        <p class="section-header__eyebrow">About This Project</p>
+        <h2 class="section-header__title" id="about-heading">The Story Behind the Data</h2>
+      </div>
+
+      <div class="about-grid">
+
+        <div class="about-text">
+          <p>
+            TrueVue is a virtual company I built and managed during my senior year of high school
+            through <strong style="color: var(--text-primary);">Virtual Enterprise International (VEI)</strong>,
+            a program where students create and run simulated businesses in a real-world competitive
+            marketplace alongside thousands of other student firms worldwide.
+          </p>
+          <p>
+            Our product — TrueVue RoadLock — was a smart dash-cam and driver-safety software suite.
+            Over seven months (October 2025 through April 2026), my team secured a B2B contract,
+            managed trade show sales across Southern California, and built an e-commerce channel,
+            generating over <strong style="color: var(--text-primary);">$1.26 million in total revenue</strong>.
+          </p>
+          <p>
+            Now a college freshman studying business and computer science, I built this dashboard
+            to bridge those two worlds — applying real financial data to a frontend development
+            project as a learning exercise in HTML, CSS, JavaScript, and data visualization.
+          </p>
+          <div class="callout">
+            All financial figures shown are authentic records from our accounting master document.
+            Months labeled "Projected" (Apr 2026) reflect approved budget plans, not actuals.
+          </div>
+        </div>
+
+        <div class="about-stats">
+          <div class="stat-item">
+            <span class="stat-item__label">Program</span>
+            <span class="stat-item__value">Virtual Enterprise International</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Fiscal period</span>
+            <span class="stat-item__value">Oct 2025 – Apr 2026</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Team size</span>
+            <span class="stat-item__value">30 employees</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Trade shows attended</span>
+            <span class="stat-item__value">5 events</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Gross margin (avg)</span>
+            <span class="stat-item__value" style="color: var(--color-success);">49.8%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Net loss improvement</span>
+            <span class="stat-item__value" style="color: var(--color-success);">Oct → Apr: +85.6%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">B2B monthly contract</span>
+            <span class="stat-item__value">$136,172 / mo</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item__label">Role</span>
+            <span class="stat-item__value">CFO · Finance Department</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <p>Built with HTML, CSS & Chart.js · TrueVue Financial Dashboard · FY 2025–2026</p>
+      <p style="margin-top: var(--space-xs);">
+        Data sourced from TrueVue Accounting Master Document &mdash; Virtual Enterprise International
+      </p>
+    </div>
+  </footer>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       JAVASCRIPT
+       ══════════════════════════════════════════════════════
+       All JS is at the bottom of <body>. This is intentional:
+       the browser reads HTML top-to-bottom. If your script
+       runs BEFORE the HTML elements exist, it can't find them.
+       Putting scripts at the bottom ensures the DOM (Document
+       Object Model — the browser's internal map of your page)
+       is fully built before your code tries to touch it.
+  ══════════════════════════════════════════════════════════ -->
+  <script>
+    /* ════════════════════════════════════════════════════════
+       SECTION A — DATA
+       ════════════════════════════════════════════════════════
+       All financial data is stored here in one place.
+       If a number changes, you update it HERE only.
+       This is the "single source of truth" principle —
+       a core concept in software engineering.
+    ════════════════════════════════════════════════════════ */
+
+    // The months shown on chart x-axes
+    const MONTHS = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+
+    // Monthly total revenue ($)
+    const REVENUE = [177173, 190192, 171055, 177595, 160056, 181123, 210180];
+
+    // Monthly gross profit (Revenue − Cost of Goods Sold)
+    const GROSS_PROFIT = [85588, 89511, 83847, 85272, 80028, 94808, 112523];
+
+    // Monthly net profit/loss (Gross Profit − Operating Expenses)
+    const NET_PROFIT = [-49193, -28136, -30354, -58255, -35985, -22844, -7075];
+
+    // Revenue by channel (full 7-month totals)
+    const REVENUE_MIX = {
+      labels: ['B2B Contract', 'Trade Shows', 'Online Sales'],
+      values: [953205, 284467, 29701],
+    };
+
+    // Operating expenses breakdown (7-month totals)
+    // Each object: { name, total, color } — color used in the progress bar
+    const EXPENSES = [
+      { name: 'Salary & Payroll',   total: 667233, color: '#4f7ef8' },
+      { name: 'Advertising',        total: 70000,  color: '#7b9fff' },
+      { name: 'Scholarship',        total: 40000,  color: '#34c87a' },
+      { name: 'Rent',               total: 30590,  color: '#34c87a' },
+      { name: 'Sales Tax',          total: 19856,  color: '#f0a832' },
+      { name: 'Interest',           total: 6923,   color: '#f0a832' },
+      { name: 'Legal Fees',         total: 3500,   color: '#a8b5cf' },
+      { name: 'Utilities',          total: 6230,   color: '#a8b5cf' },
+      { name: 'Insurance',          total: 5915,   color: '#a8b5cf' },
+      { name: 'Software',           total: 490,    color: '#a8b5cf' },
+      { name: 'Depreciation',       total: 710,    color: '#4a5168' },
+      { name: 'Other',              total: 11971,  color: '#4a5168' },
+    ];
+
+    // Total OpEx — used to calculate each expense's percentage share
+    const TOTAL_OPEX = EXPENSES.reduce((sum, e) => sum + e.total, 0);
+    // Array.reduce() accumulates a running total:
+    //   sum starts at 0, then adds each expense's .total
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION B — METRIC CARDS
+       ════════════════════════════════════════════════════════
+       querySelectorAll() returns ALL elements matching a CSS
+       selector, as a NodeList (similar to an array).
+       We loop through them and fill in their child elements
+       using data-* attributes we put on the HTML above.
+    ════════════════════════════════════════════════════════ */
+
+    document.querySelectorAll('.metric-card').forEach(card => {
+      // Read the custom data-* attributes from the HTML element
+      const value    = card.dataset.value;     // e.g. "$1,267,374"
+      const label    = card.dataset.label;     // e.g. "Total Revenue"
+      const context  = card.dataset.context;  // e.g. "All channels combined"
+      const color    = card.dataset.color;    // e.g. "#4f7ef8"
+      const positive = card.dataset.positive === 'true'; // convert string → boolean
+
+      // querySelector (without All) finds the FIRST matching child
+      card.querySelector('.metric-card__bar').style.background = color;
+      card.querySelector('.metric-card__label').textContent    = label;
+      card.querySelector('.metric-card__context').textContent  = context;
+
+      // Fill the value and conditionally add a color class
+      const valueEl = card.querySelector('.metric-card__value');
+      valueEl.textContent = value;
+      if (!positive) valueEl.classList.add('metric-card__value--negative');
+    });
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION C — HELPER FUNCTIONS
+       ════════════════════════════════════════════════════════
+       Small utility functions used by multiple chart setups.
+       Defining them once and reusing them is the DRY principle
+       — "Don't Repeat Yourself".
+    ════════════════════════════════════════════════════════ */
+
+    /**
+     * formatCurrency — turns a raw number into a readable string.
+     * @param {number} value  - e.g. 177173
+     * @returns {string}      - e.g. "$177K" or "-$49K"
+     */
+    function formatCurrency(value) {
+      const sign = value < 0 ? '-' : '';       // determine sign
+      const abs  = Math.abs(value);            // work with positive number
+      if (abs >= 1_000_000) return sign + '$' + (abs / 1_000_000).toFixed(2) + 'M';
+      if (abs >= 1_000)     return sign + '$' + Math.round(abs / 1_000) + 'K';
+      return sign + '$' + Math.round(abs);
+    }
+
+    /**
+     * buildLegend — injects HTML legend items into a container.
+     * @param {string}   containerId  - the id of the legend <div>
+     * @param {string[]} labels       - dataset names
+     * @param {string[]} colors       - matching hex colors
+     */
+    function buildLegend(containerId, labels, colors) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = labels.map((label, i) =>
+        // Template literals (backticks) let you embed variables with ${}
+        `<div class="chart-legend__item">
+          <div class="chart-legend__swatch" style="background: ${colors[i]};"></div>
+          <span>${label}</span>
+        </div>`
+      ).join(''); // join('') merges the array of strings into one HTML string
+    }
+
+    // Shared Chart.js options for axis styling
+    // Defined once here so both charts that use axes stay consistent
+    function buildAxisOptions() {
+      return {
+        x: {
+          ticks:  { color: '#7a8499', font: { size: 11 } },
+          grid:   { color: 'rgba(255,255,255,0.04)' },
+          border: { display: false },
+        },
+        y: {
+          ticks: {
+            color: '#7a8499',
+            font:  { size: 11 },
+            // callback runs for every tick label — here we format it as currency
+            callback: (v) => formatCurrency(v),
+            maxTicksLimit: 6,
+          },
+          grid:   { color: 'rgba(255,255,255,0.04)' },
+          border: { display: false },
+        },
+      };
+    }
+
+    // Shared tooltip callback so every chart formats values the same way
+    const TOOLTIP_CURRENCY = {
+      callbacks: {
+        label: (ctx) => ' ' + formatCurrency(ctx.parsed.y ?? ctx.parsed),
+      },
+    };
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION D — CHART 1: BAR CHART (Revenue vs Gross Profit)
+       ════════════════════════════════════════════════════════
+       new Chart(canvas, config) is the main Chart.js call.
+       The config object has three top-level keys:
+         - type     : what kind of chart ('bar', 'line', 'doughnut'…)
+         - data     : the datasets and labels to plot
+         - options  : visual configuration
+    ════════════════════════════════════════════════════════ */
+
+    new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+
+      data: {
+        labels: MONTHS,         // X-axis labels
+        datasets: [
+          {
+            label: 'Revenue',
+            data: REVENUE,
+            backgroundColor: '#4f7ef8', // Bar fill color
+            borderRadius: 4,            // Rounded bar tops — subtle but modern
+            borderSkipped: false,       // Apply radius to all sides
+          },
+          {
+            label: 'Gross Profit',
+            data: GROSS_PROFIT,
+            backgroundColor: '#34c87a',
+            borderRadius: 4,
+            borderSkipped: false,
+          },
+        ],
+      },
+
+      options: {
+        responsive: true,          // Resize with the container
+        maintainAspectRatio: false, // Use the wrapper div's height
+        plugins: {
+          legend:  { display: false },    // We use our custom HTML legend
+          tooltip: TOOLTIP_CURRENCY,
+        },
+        scales: buildAxisOptions(), // Reuse the shared axis config
+      },
+    });
+
+    // Build the custom legend for this chart
+    buildLegend('barChartLegend',
+      ['Revenue', 'Gross Profit'],
+      ['#4f7ef8', '#34c87a']
+    );
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION E — CHART 2: DOUGHNUT CHART (Revenue Mix)
+       ════════════════════════════════════════════════════════
+       A doughnut chart has NO x/y scales — data is encoded
+       as arc angles. The "cutout" option sets the hole size.
+    ════════════════════════════════════════════════════════ */
+
+    const DONUT_COLORS = ['#4f7ef8', '#f0a832', '#34c87a'];
+
+    new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+
+      data: {
+        labels: REVENUE_MIX.labels,
+        datasets: [{
+          data: REVENUE_MIX.values,
+          backgroundColor: DONUT_COLORS,
+          borderWidth: 0,       // No border between segments — cleaner look
+          hoverOffset: 6,       // Segments expand slightly on hover
+        }],
+      },
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',          // How large the center hole is (% of radius)
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // For a doughnut, the value is in ctx.parsed, not ctx.parsed.y
+              label: (ctx) => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct   = ((ctx.parsed / total) * 100).toFixed(1);
+                return ` ${ctx.label}: ${formatCurrency(ctx.parsed)} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+
+    buildLegend('donutChartLegend',
+      REVENUE_MIX.labels,
+      DONUT_COLORS
+    );
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION F — CHART 3: LINE CHART (Net Profit/Loss Trend)
+       ════════════════════════════════════════════════════════
+       A line chart is great for showing trends over time.
+       The fill option shades the area under the line.
+       tension controls how curved the line is (0 = sharp).
+    ════════════════════════════════════════════════════════ */
+
+    new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+
+      data: {
+        labels: MONTHS,
+        datasets: [{
+          label: 'Net Profit / Loss',
+          data: NET_PROFIT,
+          borderColor: '#f05252',               // Line color
+          backgroundColor: 'rgba(240,82,82,0.1)', // Shaded area fill (low opacity)
+          fill: true,                            // Enable area fill
+          tension: 0.35,                         // Slight curve — 0 = angular, 1 = very curved
+          pointRadius: 5,                        // Size of the data point dots
+          pointBackgroundColor: '#f05252',
+          pointBorderColor: '#0d0f14',           // Dark border around dots for contrast
+          pointBorderWidth: 2,
+          borderWidth: 2,
+        }],
+      },
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend:  { display: false },
+          tooltip: TOOLTIP_CURRENCY,
+        },
+        scales: buildAxisOptions(),
+      },
+    });
+
+    buildLegend('lineChartLegend',
+      ['Net Profit / Loss (negative = loss)'],
+      ['#f05252']
+    );
+
+
+    /* ════════════════════════════════════════════════════════
+       SECTION G — EXPENSE TABLE
+       ════════════════════════════════════════════════════════
+       We build the table rows dynamically from the EXPENSES
+       array. This is better than writing the HTML by hand:
+       if you add/remove an expense, the table updates itself.
+    ════════════════════════════════════════════════════════ */
+
+    const tbody = document.getElementById('expenseTableBody');
+
+    // Sort expenses largest-to-smallest so the table is easy to scan
+    const sortedExpenses = [...EXPENSES].sort((a, b) => b.total - a.total);
+    // The spread [...EXPENSES] creates a copy — we never mutate the original array
+
+    sortedExpenses.forEach(expense => {
+      const pct = ((expense.total / TOTAL_OPEX) * 100).toFixed(1); // e.g. "77.3"
+
+      // Format the dollar amount with commas using toLocaleString
+      const formatted = '$' + expense.total.toLocaleString('en-US');
+
+      // Build the <tr> HTML as a template literal string
+      const row = `
+        <tr>
+          <td>${expense.name}</td>
+          <td>${formatted}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="progress-bar-wrap" style="flex: 1;">
+                <div class="progress-bar-fill"
+                     style="width: ${pct}%; background: ${expense.color};">
+                </div>
+              </div>
+              <span style="font-size: var(--text-xs); color: var(--text-secondary); min-width: 36px;">
+                ${pct}%
+              </span>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      // innerHTML += would be slow for many rows; insertAdjacentHTML is faster
+      tbody.insertAdjacentHTML('beforeend', row);
+    });
+
+  </script>
+
+</body>
+</html>
